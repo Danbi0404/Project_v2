@@ -23,6 +23,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 상대적 시간 표시 업데이트
     updateRelativeTimes();
+
+    // 대댓글 폼 초기화 (상세 페이지일 경우)
+    if(document.querySelector('.comment-list')) {
+        initReplyForms();
+    }
 });
 
 // ===== 게시글 좋아요 기능 초기화 =====
@@ -228,7 +233,85 @@ function initCommentForm() {
     commentForm.setAttribute('data-initialized', 'true');
 }
 
-// ===== 댓글 목록 갱신 =====
+// ===== 대댓글 작성 폼 토글 =====
+function toggleReplyForm(commentKey) {
+    const replyForm = document.querySelector(`.reply-form[data-parent-key="${commentKey}"]`);
+
+    if(replyForm.style.display === 'block') {
+        replyForm.style.display = 'none';
+    } else {
+        // 다른 대댓글 폼 닫기
+        document.querySelectorAll('.reply-form').forEach(form => {
+            form.style.display = 'none';
+        });
+        replyForm.style.display = 'block';
+    }
+}
+
+// ===== 대댓글 작성 처리 =====
+function initReplyForms() {
+    const replyForms = document.querySelectorAll('.reply-form');
+
+    replyForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const parentCommentKey = this.getAttribute('data-parent-key');
+            const boardKey = this.getAttribute('data-board-key');
+            const replyText = this.querySelector('textarea').value.trim();
+
+            if(!parentCommentKey || !boardKey || !replyText) return;
+
+            const submitButton = this.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+
+            const replyData = {
+                comment_board_key: boardKey,
+                parent_comment_key: parentCommentKey,
+                comment_text: replyText
+            };
+
+            // AJAX 요청으로 대댓글 작성
+            fetch('/board/api/comment/reply', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]').content
+                },
+                body: JSON.stringify(replyData)
+            })
+                .then(response => {
+                    if(response.status === 401) {
+                        alert('로그인이 필요한 기능입니다.');
+                        window.location.href = '/user/login';
+                        throw new Error('로그인 필요');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if(data.success) {
+                        // 댓글 목록 갱신
+                        updateCommentList(data.commentList);
+
+                        // 폼 초기화 및 닫기
+                        this.querySelector('textarea').value = '';
+                        this.style.display = 'none';
+                    } else {
+                        console.error('대댓글 작성 중 오류 발생:', data.message);
+                        alert('대댓글 작성 중 오류가 발생했습니다.');
+                    }
+                })
+                .catch(error => {
+                    console.error('대댓글 요청 중 오류 발생:', error);
+                })
+                .finally(() => {
+                    submitButton.disabled = false;
+                });
+        });
+    });
+}
+
+// ===== 댓글 목록 갱신 수정 =====
 function updateCommentList(commentList) {
     const commentContainer = document.querySelector('.comment-list');
     if(!commentContainer) return;
@@ -245,7 +328,14 @@ function updateCommentList(commentList) {
     // 댓글 목록 생성
     commentList.forEach(comment => {
         const commentElement = document.createElement('div');
-        commentElement.className = 'comment-item';
+        commentElement.className = 'comment-item' + (comment.depth > 0 ? ' comment-reply' : '');
+        commentElement.dataset.commentKey = comment.comment_key;
+
+        if(comment.depth > 0) {
+            commentElement.style.paddingLeft = '30px';
+            commentElement.style.borderLeft = '2px solid #e5e5e5';
+            commentElement.style.marginLeft = '20px';
+        }
 
         const createdDate = new Date(comment.created_date);
         const formattedDate = `${createdDate.getFullYear()}-${(createdDate.getMonth()+1).toString().padStart(2, '0')}-${createdDate.getDate().toString().padStart(2, '0')} ${createdDate.getHours().toString().padStart(2, '0')}:${createdDate.getMinutes().toString().padStart(2, '0')}`;
@@ -257,8 +347,19 @@ function updateCommentList(commentList) {
             </div>
             <div class="comment-content">${comment.comment_text}</div>
             <div class="comment-actions">
+                ${comment.depth === 0 ? `<button class="reply-comment-btn" onclick="toggleReplyForm(${comment.comment_key})">답글</button>` : ''}
                 ${comment.is_author ? `<button class="delete-comment" data-comment-key="${comment.comment_key}" data-board-key="${comment.comment_board_key}">삭제</button>` : ''}
             </div>
+            ${comment.depth === 0 ? `
+            <div class="reply-form-container">
+                <form class="reply-form" data-parent-key="${comment.comment_key}" data-board-key="${comment.comment_board_key}" style="display: none;">
+                    <textarea class="reply-textarea" placeholder="답글을 작성해주세요." required></textarea>
+                    <div style="text-align: right;">
+                        <button type="button" class="cancel-reply-btn" onclick="toggleReplyForm(${comment.comment_key})">취소</button>
+                        <button type="submit" class="reply-submit">답글 등록</button>
+                    </div>
+                </form>
+            </div>` : ''}
         `;
 
         commentContainer.appendChild(commentElement);
@@ -266,6 +367,9 @@ function updateCommentList(commentList) {
 
     // 삭제 버튼 이벤트 초기화
     initCommentDeleteButtons();
+
+    // 대댓글 폼 이벤트 초기화
+    initReplyForms();
 
     // 상대적 시간 표시 업데이트
     updateRelativeTimes();

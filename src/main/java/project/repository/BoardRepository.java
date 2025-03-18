@@ -77,6 +77,17 @@ public class BoardRepository {
         boardMapper.writeComment(boardCommentBean);
     }
 
+
+    // 댓글 키로 특정 댓글 정보 가져오기
+    public BoardCommentBean getCommentByKey(int comment_key) {
+        return boardMapper.getCommentByKey(comment_key);
+    }
+
+    // 대댓글 작성
+    public void writeReply(BoardCommentBean boardCommentBean) {
+        boardMapper.writeReply(boardCommentBean);
+    }
+
     // 댓글 삭제
     public void deleteComment(BoardCommentBean boardCommentBean) {
         boardMapper.deleteComment(boardCommentBean);

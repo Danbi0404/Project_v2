@@ -100,16 +100,28 @@ public interface BoardMapper {
     void deleteBoard(BoardBean boardBean);
 
     /**
-     * 댓글 목록 가져오기
+     * 댓글 목록 가져오기 (대댓글 포함)
      */
     @Select("SELECT bc.comment_key, bc.comment_board_key, bc.comment_user_key, bc.comment_text, " +
             "TO_CHAR(bc.created_date, 'YYYY-MM-DD HH24:MI:SS') AS created_date, " +
-            "u.user_name, u.user_nickname " +
+            "u.user_name, u.user_nickname, bc.parent_comment_key, bc.depth, " +
+            "CASE WHEN (SELECT COUNT(*) FROM board_comment WHERE parent_comment_key = bc.comment_key) > 0 THEN 1 ELSE 0 END AS has_replies " +
             "FROM board_comment bc " +
             "JOIN users u ON bc.comment_user_key = u.user_key " +
             "WHERE bc.comment_board_key = #{board_key} " +
-            "ORDER BY bc.comment_key")
+            "ORDER BY CASE WHEN bc.parent_comment_key IS NULL THEN bc.comment_key ELSE bc.parent_comment_key END, " +
+            "bc.depth, bc.comment_key")
     List<BoardCommentBean> getBoardCommentList(int board_key);
+
+    /**
+     * 댓글 키로 특정 댓글 정보 가져오기
+     */
+    @Select("SELECT comment_key, comment_board_key, comment_user_key, comment_text, " +
+            "TO_CHAR(created_date, 'YYYY-MM-DD HH24:MI:SS') AS created_date, " +
+            "parent_comment_key, depth " +
+            "FROM board_comment " +
+            "WHERE comment_key = #{comment_key}")
+    BoardCommentBean getCommentByKey(int comment_key);
 
     /**
      * 댓글 작성
@@ -117,6 +129,13 @@ public interface BoardMapper {
     @Insert("INSERT INTO board_comment (comment_key, comment_board_key, comment_user_key, comment_text, created_date) " +
             "VALUES (comment_seq.nextval, #{comment_board_key}, #{comment_user_key}, #{comment_text}, SYSDATE)")
     void writeComment(BoardCommentBean boardCommentBean);
+
+    /**
+     * 대댓글 작성
+     */
+    @Insert("INSERT INTO board_comment (comment_key, comment_board_key, comment_user_key, comment_text, created_date, parent_comment_key, depth) " +
+            "VALUES (comment_seq.nextval, #{comment_board_key}, #{comment_user_key}, #{comment_text}, SYSDATE, #{parent_comment_key}, #{depth})")
+    void writeReply(BoardCommentBean boardCommentBean);
 
     /**
      * 댓글 삭제

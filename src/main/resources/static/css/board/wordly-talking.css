@@ -80,6 +80,92 @@
     color: #FF902F;
 }
 
+
+/* 대댓글 스타일 */
+.comment-reply {
+    margin-left: 20px;
+    border-left: 2px solid #e5e5e5;
+    padding-left: 30px;
+    position: relative;
+}
+
+.comment-reply::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    top: -1px;
+    width: 15px;
+    height: 2px;
+    background-color: #e5e5e5;
+}
+
+.reply-form {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    display: none;
+}
+
+.reply-textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #e5e5e5;
+    border-radius: 5px;
+    min-height: 80px;
+    resize: vertical;
+    font-family: 'KoPubWorldDotum', sans-serif;
+    margin-bottom: 10px;
+}
+
+.reply-submit {
+    padding: 8px 15px;
+    background-color: #D1DE74;
+    color: #333;
+    border: none;
+    border-radius: 5px;
+    font-family: 'KoPubWorldDotum', sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.reply-submit:hover {
+    background-color: #c1ce64;
+}
+
+.cancel-reply-btn {
+    padding: 8px 15px;
+    background-color: #f5f5f5;
+    color: #666;
+    border: none;
+    border-radius: 5px;
+    font-family: 'KoPubWorldDotum', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.cancel-reply-btn:hover {
+    background-color: #e0e0e0;
+}
+
+.reply-comment-btn {
+    font-size: 13px;
+    color: #666;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-right: 15px;
+}
+
+.reply-comment-btn:hover {
+    color: #333;
+    text-decoration: underline;
+}
+
 /* 모바일 최적화 */
 @media (max-width: 768px) {
     .menu-subcategory {

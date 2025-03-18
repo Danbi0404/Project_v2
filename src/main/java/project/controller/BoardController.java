@@ -361,6 +361,41 @@ public class BoardController {
     }
 
     /**
+     * 대댓글 작성 AJAX 처리
+     */
+    @PostMapping("/api/comment/reply")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> writeReply(@RequestBody BoardCommentBean commentBean) {
+        Map<String, Object> result = new HashMap<>();
+
+        // 로그인 체크
+        if(!loginUserBean.isLogin()) {
+            result.put("success", false);
+            result.put("message", "로그인이 필요합니다.");
+            return new ResponseEntity<>(result, HttpStatus.UNAUTHORIZED);
+        }
+
+        // 사용자 키 설정
+        commentBean.setComment_user_key(loginUserBean.getUser_key());
+
+        try {
+            // 대댓글 작성
+            boardService.writeReply(commentBean);
+
+            // 댓글 목록 다시 가져오기
+            List<BoardCommentBean> commentList = boardService.getBoardCommentList(commentBean.getComment_board_key());
+
+            result.put("success", true);
+            result.put("commentList", commentList);
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "대댓글 작성 중 오류가 발생했습니다.");
+            return new ResponseEntity<>(result, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
      * 커넥트 게시판 메인 페이지
      */
     @GetMapping("/connect")

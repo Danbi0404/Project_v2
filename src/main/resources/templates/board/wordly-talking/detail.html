@@ -315,7 +315,9 @@
                     </div>
 
                     <!-- 댓글 목록 -->
-                    <div th:each="comment : ${commentList}" class="comment-item">
+                    <div th:each="comment : ${commentList}"
+                         th:class="${comment.depth > 0 ? 'comment-item comment-reply' : 'comment-item'}"
+                         th:data-comment-key="${comment.comment_key}">
                         <div class="comment-item-header">
                             <span class="comment-author" th:text="${comment.user_nickname}">댓글 작성자</span>
                             <span class="comment-date" th:data-date="${comment.created_date}" th:text="${#strings.substring(comment.created_date, 0, 10)}">작성일</span>
@@ -323,8 +325,22 @@
                         <div class="comment-content" th:text="${comment.comment_text}">
                             댓글 내용
                         </div>
-                        <div class="comment-actions" th:if="${loginUserBean.login == true && loginUserBean.user_key == comment.comment_user_key}">
-                            <button class="delete-comment" th:data-comment-key="${comment.comment_key}" th:data-board-key="${boardBean.board_key}">삭제</button>
+                        <div class="comment-actions">
+                            <!-- 대댓글 버튼은 원댓글에만 표시 -->
+                            <button th:if="${comment.depth == 0}" class="reply-comment-btn" th:attr="onclick='toggleReplyForm(' + ${comment.comment_key} + ')'">답글</button>
+                            <button class="delete-comment" th:if="${loginUserBean.login == true && loginUserBean.user_key == comment.comment_user_key}"
+                                    th:data-comment-key="${comment.comment_key}" th:data-board-key="${boardBean.board_key}">삭제</button>
+                        </div>
+
+                        <!-- 대댓글 작성 폼은 원댓글에만 표시 -->
+                        <div th:if="${comment.depth == 0}" class="reply-form-container">
+                            <form class="reply-form" th:data-parent-key="${comment.comment_key}" th:data-board-key="${boardBean.board_key}" style="display: none;">
+                                <textarea class="reply-textarea" placeholder="답글을 작성해주세요." required></textarea>
+                                <div style="text-align: right;">
+                                    <button type="button" class="cancel-reply-btn" th:attr="onclick='toggleReplyForm(' + ${comment.comment_key} + ')'">취소</button>
+                                    <button type="submit" class="reply-submit">답글 등록</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>

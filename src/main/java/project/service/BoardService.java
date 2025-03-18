@@ -110,6 +110,23 @@ public void writeComment(BoardCommentBean boardCommentBean) {
     boardRepository.writeComment(boardCommentBean);
 }
 
+    // 대댓글 작성
+    public void writeReply(BoardCommentBean boardCommentBean) {
+        // 부모 댓글 정보 가져오기
+        BoardCommentBean parentComment = boardRepository.getCommentByKey(boardCommentBean.getParent_comment_key());
+
+        // 부모 댓글이 이미 대댓글인 경우 (depth > 0), 최상위 부모로 설정
+        if (parentComment != null && parentComment.getParent_comment_key() != null) {
+            boardCommentBean.setParent_comment_key(parentComment.getParent_comment_key());
+        }
+
+        // depth 설정 (1로 고정 - 2단계 이상의 중첩 대댓글은 허용하지 않음)
+        boardCommentBean.setDepth(1);
+
+        // 대댓글 작성
+        boardRepository.writeReply(boardCommentBean);
+    }
+
 // 댓글 삭제
 public void deleteComment(BoardCommentBean boardCommentBean) {
     boardRepository.deleteComment(boardCommentBean);
